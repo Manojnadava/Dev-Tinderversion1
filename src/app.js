@@ -4,23 +4,31 @@ const express=require('express');
 
 const app= express(); // creating an instance of an express through calling function
 
-app.get(/^\/orders\/[0-9]{2}.{2}.+done$/,(req,res)=>{
-    res.send({firstName: 'Mw]eo', LastName:'hij'});
-   // here \ escape char [0-9] any number with total length 2 . is anything with total length 2 again . i.e anything with lenth 1 atleast ending wioth done 
-})
+//One route can have a multiple route handler function
 
-app.get('/user',(req,res)=>{
-    // to acess query paramter like localhost:7777/user?userid=101&password=skjdjidn
-   // console.log(req.query);
-   res.send('hellos')
-})
+// we can also do like this 
+// app.use('/user', [rh1, rh2.rh3], rh4,rh5)
 
-//Used to make dynamic routes  likes  ocalhost:7777/user/userid/name
-app.get('/user/:userid/:name',(req,res)=>{
-    console.log(req.params);
-    res.send(req.params);
-})
-
+app.use('/user',
+    (req,res,next)=>{
+    //console.log('')
+    next(); // here quickly jumps to next route handler and excute that function and once done it will execute below code i.e
+    // again executing line no 14 which will throw error as response sent already
+   // res.send('First route handler')  // sending response to back where req made 
+   //if we not sending response to req then node will not pass to next route handler unless we use next
+   // once we send res back to url where req made the second route handler throews error as once send res connection over
+},
+(req,res, next)=>{
+    console.log('second')
+    res.send('Second route handler')  // sending response to back where req made 
+    next();
+},
+(req,res,next)=>{
+    console.log('Super 3')
+    //res.send('Third route handler')  // sending response to back where req made 
+    next();
+}
+)
 
 
 app.listen(3500, ()=>{
