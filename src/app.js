@@ -1,89 +1,43 @@
 
 
 const express=require('express');
-
+const connection=require('./config/database');
 const app= express(); // creating an instance of an express through calling function
+const User= require('./models/user')  // since we directly exported user calss there we can import with any name
 
-const  {adminAuth,userAuth}= require('./middlewears/auth');
+// crerating a signup api post req ahndling
 
-//One route can have a multiple route handler function
+app.post('/signup', async (req, res)=>{
+    const userObj= {
+        firstName : "akshay",
+        lastName : "shay",
+        emailId : "akshay@gmail.com",
+        password : "akshay",
+    }
 
-// we can also do like this 
-// app.use('/user', [rh1, rh2.rh3], rh4,rh5)
+    // creating a new istnace of the User model
+    const user= new User(userObj);
 
-// app.use('/user',
-//     (req,res,next)=>{
-//     //console.log('')  // tis actually middlewaer which is nothing but coming inbetween req and route handler
-//     next(); // here quickly jumps to next route handler and excute that function and once done it will execute below code i.e
-//     // again executing line no 14 which will throw error as response sent already
-//    // res.send('First route handler')  // sending response to back where req made 
-//    //if we not sending response to req then node will not pass to next route handler unless we use next
-//    // once we send res back to url where req made the second route handler throews error as once send res connection over
-// },
-// (req,res, next)=>{
-//     console.log('second')
-//     res.send('Second route handler')  // sending response to back where req made   
-// this call back is a actual route hndler
-//     next();
-// },
-// (req,res,next)=>{
-//     console.log('Super 3')
-//     //res.send('Third route handler')  // sending response to back where req made 
-//     next();
-// }
-// )
-//Handle auth middleware for all get post de;lete admin path routes
+    try {
+        await user.save();  // tghis in hidsight using inserOne function in mongo which returns a promise so we need to use async in handler
 
-//app.use('/admin',adminAuth.adminAuth) // if we not use bracket to acces adminAuth
-
-app.use('/admin',adminAuth) 
-
-app.post('/user', (req,res, next)=>{
-    res.send('post req no use of user auth middlewaer')
-    next();
-})
-app.get('/user', userAuth , (req,res)=>{
-    res.send('get req  use of user auth')
-})
-
-app.get('/getUser', userAuth , (req,res)=>{
-    try{
-        throw new Error('Erorr on getting user list');  // will create a new err objhect
-       res.send('get no of user')
+        res.send('User added succesfullky')
     }
     catch (err) {
-        res.status(500).send(err.message);
+      res.status(400).send('Error hppend with'+ err.message)
     }
-})
-
-app.post('/getUser', userAuth , (req,res)=>{
-    throw new Error('Erorr on getting user post list');  // will create a new err objhect
-    res.send('get no of user')
-})
-
-
-
-// why middlewear requires actually
-app.get('/admin/getAllData', (req,res)=>{
-    // first chek whether req is authenticated i.e is admin ia valid one
-    res.send('All data sent');
     
 })
 
-app.get('/admin/deletUser', (req,res)=>{
-// first chek whether req is authenticated i.e is admin ia valid one herealso
-    res.send('Deleted User');
+
+connection().then(()=>{
+    console.log('Connection establised  to databse dev-tinder')
+    app.listen(3500, ()=>{
+        console.log('starting a new project');
+    })
+}).catch((err)=>{
+  console.log(err.mesage);
 })
 
-// middleware can also be used to catch error orginated from other middlewaer or route handlet like try and catch
+// first we need to establish a connection with db then should listen to user request i.e server listnening
 
-app.use('/', (err,req,res,next)=>{
-  if(err){
-    res.status(500).send(err.message);
-  }
-})
-
-
-app.listen(3500, ()=>{
-    console.log('starting a new project');
-})
