@@ -74,6 +74,23 @@ app.delete('/user',async (req,res)=>{
     
 })
 
+
+// Update a one particular record of a one document in a collection using Patch
+ app.patch('/update', async (req, res)=>{
+ try{
+     const {emailId} = req.body;
+     console.log(emailId)
+     const user= await User.findByIdAndUpdate(req.body.user_id, {emailId}, {returnOriginal:false})
+     console.log(user);
+    res.send(user);
+ }  catch(err) {
+    res.status(401).send('Resoure unable to update')
+ }
+   
+ })
+
+
+
 connection().then(()=>{
     console.log('Connection establised  to databse dev-tinder')
     app.listen(3500, ()=>{
