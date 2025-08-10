@@ -1,9 +1,13 @@
-
+//require keyword is added as schema so that in document those fileds are must otherwise they throw error from mongodb- these are checks at databse level
 
 const express=require('express');
 const connection=require('./config/database');
 const app= express(); // creating an instance of an express through calling function
 const User= require('./models/user')  // since we directly exported user calss there we can import with any name
+
+User.init()  // ensures indexes are built
+  .then(() => console.log('Indexes are ensured'))
+  .catch((err) => console.error('Index error', err));
 
 
 app.use(express.json()); // which converts json data from post req to js object and attched to req.body
@@ -73,14 +77,30 @@ app.delete('/user',async (req,res)=>{
  }
     
 })
+// Update a user document using PUT
+app.put('/user/:userid', async (req, res) => {
+  try {
+    const userId = req.params.userid; // Extract user ID from URL params
+    const updatedData = req.body; // Data to update from the request body
+
+    const user = await User.findByIdAndUpdate(userId, updatedData, { new: true }); // Update and return the updated document
+    if (user) {
+      res.send(user); // Send the updated user data
+    } else {
+      res.status(404).send('User not found');
+    }
+  } catch (err) {
+    res.status(500).send('Error updating user: ' + err.message);
+  }
+});
 
 
 // Update a one particular record of a one document in a collection using Patch
- app.patch('/update', async (req, res)=>{
+ app.patch('/update/:userid', async (req, res)=>{
  try{
-     const {emailId} = req.body;
-     console.log(emailId)
-     const user= await User.findByIdAndUpdate(req.body.user_id, {emailId}, {returnOriginal:false})
+     const xeff = req.body;
+     console.log(xeff)
+     const user= await User.findByIdAndUpdate(req.params.userid, xeff, {returnOriginal:false,runValidators:true}); // returnOriginal:false ensures that the updated document is returned, runValidators:true ensures that the update respects the schema validation rules
      console.log(user);
     res.send(user);
  }  catch(err) {
