@@ -82,6 +82,8 @@ app.put('/user/:userid', async (req, res) => {
   try {
     const userId = req.params.userid; // Extract user ID from URL params
     const updatedData = req.body; // Data to update from the request body
+    const { emailId,skills,photoUrl } = updatedData; // Destructure emailId from the request body
+    console.log(emailId,skills,photoUrl);
 
     const user = await User.findByIdAndUpdate(userId, updatedData, { new: true }); // Update and return the updated document
     if (user) {

@@ -82,7 +82,9 @@ const userSchema=  new mongoose.Schema ({
         
     }
 
-})
+},{ timestamps: true,  // this will add createdAt and updatedAt fields to the schema
+    versionKey: false  // this will remove __v field from the schema
+});
 
 
 userSchema.pre('findOneAndUpdate', function (next) {
