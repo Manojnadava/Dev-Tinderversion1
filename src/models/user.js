@@ -24,7 +24,7 @@ const userSchema=  new mongoose.Schema ({
         trim: true  , // removes whitespoace anywhere from emailId
         validate : {
             validator:(value)=>validator.isEmail(value),
-            message:props=>`${props.value + props.path} is not a valid email`;
+            message:props=>`${props.value + props.path} is not a valid email`
         }
     },
     password : {

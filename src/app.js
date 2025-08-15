@@ -2,8 +2,13 @@
 
 const express=require('express');
 const connection=require('./config/database');
+const validator= require('validator')
 const app= express(); // creating an instance of an express through calling function
 const User= require('./models/user')  // since we directly exported user calss there we can import with any name
+const validateRequestBody=require('./util/validate');
+const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
+
+
 
 User.init()  // ensures indexes are built
   .then(() => console.log('Indexes are ensured'))
@@ -13,20 +18,64 @@ User.init()  // ensures indexes are built
 app.use(express.json()); // which converts json data from post req to js object and attched to req.body
 // crerating a signup api post req handling
 
+
+
+//Login Autrhentication API
+app.post('/login', (req,res)=>{
+  const {emailId, password}= req.body;
+  console.log(password);
+  try{
+     const valid= validator.isEmail(emailId);
+     console.log(valid);
+     if(!valid) {
+      throw new Error('Invalid Credentials')
+     }
+     const user= User.findOne({emailId});
+     console.log(user);
+     const matchPasswords= matchPassword(password,user.password);
+     if(!matchPasswords) {
+      throw new Error('Invalid Credentials')
+     }
+     res.send('Login successfull');
+
+
+  } catch (err) {
+   res.status(401).send('Error with'+ err.message);
+  }
+
+})
+
 app.post('/signup', async (req, res)=>{
   // ajson obj diff to js obj js obj is key value pair but in json both should be string
     // creating a new istnace of the User model
   console.log( req.body);  //serverundefined  if no middelwear used
     const userObj= req.body;   // our server cant directly read data req.body as it is in json format so we neeed middelwear
-    const user= new User(userObj);   //here this User isa model which uliton frame work or structure of schema user_schema
+    
 
     try {
-        await user.save();  // tghis in hidsight using inserOne function in mongo which returns a promise so we need to use async in handler
+       //User data validation
+        validateRequestBody(req);
+        const { firstName, lastName, emailId, password } = req.body; 
 
-        res.send('User added succesfullky')
+
+       //Password Hashing 
+       const hashedpassword= encryptPassword(password);
+
+       // saving the user 
+       const user= new User({
+        firstName,
+        lastName,
+        emailId,
+        password: hashedpassword,  // here we are using the encryptPassword function to hash the password
+        skills: req.body.skills || [],  // if skills not provided then it will be an empty array
+        photoUrl: req.body.photoUrl || ''  // if photoUrl not provided then it will be an empty string
+       });   //here this User isa model which uliton frame work or structure of schema user_schema
+      await user.save();  // this in hidsight using inserOne function in mongo which returns a promise so we need to use async in handler
+
+        res.send('User added succesfully')
     }
     catch (err) {
-      res.status(400).send('Error hppend with'+ err.message)
+      res.status(400).send('Error happend with'+ err.message)
     }
     
 })
@@ -62,6 +111,7 @@ app.get('/feed', async (req,res)=>{
    
     
 })
+
 
 //to delete a particluare user from db
 
