@@ -6,9 +6,8 @@ const validator= require('validator')
 const app= express(); // creating an instance of an express through calling function
 const User= require('./models/user')  // since we directly exported user calss there we can import with any name
 const validateRequestBody=require('./util/validate');
-const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
+//const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
 const cookieparser=require('cookie-parser')
-const jwt=require('jsonwebtoken')
 const {userAuth}= require('./middlewears/auth');
 
 User.init()  // ensures indexes are built
@@ -36,15 +35,15 @@ app.post('/login', async (req,res)=>{
      }
      const user= await  User.findOne({emailId}).select('+password');
      console.log(user);
-     const matchPasswords=  await matchPassword(password,user.password);
+     const matchPasswords= await user.verifyPassword;
      if(!matchPasswords) {
       throw new Error('Invalid Credentials')
      }
      // Login successful
      // Create a JWT token
-     const token= await jwt.sign({_id:user._id},"Dev@123tinder") // so basicall this will create a encrypted jst token which include user_id in hidden format and with secreat key to encode nad decode it
+     const token=  await user.getJwt();
      // add this jwt token to cookie and send the response back to user
-     res.cookie('token',token,{httpOnly:true,maxAge:1000*60*60 , secure: true});
+     res.cookie('token',token,{httpOnly:true ,maxAge:1000*60*60 , secure: true});
      res.send('Login successfull');
 
 
@@ -72,17 +71,17 @@ app.post('/signup', async (req, res)=>{
         const { firstName, lastName, emailId, password } = req.body; 
 
 
-       //Password Hashing 
-       const hashedpassword= await  encryptPassword(password);
+       //Password Hashing taken care at schema level
+       
 
-       console.log(hashedpassword);
+       //console.log(hashedpassword);
 
        // saving the user 
        const user= new User({
         firstName,
         lastName,
         emailId,
-        password: hashedpassword,  // here we are using the encryptPassword function to hash the password
+        password,  // here we are using the encryptPassword function to hash the password
         skills: req.body.skills || [],  // if skills not provided then it will be an empty array
         photoUrl: req.body.photoUrl   // if photoUrl not provided then it will be an empty string
        });   //here this User isa model which uliton frame work or structure of schema user_schema

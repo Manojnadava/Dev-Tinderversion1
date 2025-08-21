@@ -1,4 +1,6 @@
 const mongoose= require('mongoose');
+const jwt=require('jsonwebtoken')
+const bcrypt=require('bcrypt')
 const regex=/^https?:\/\/.+\.(jpg|png)$/
 const skills=['JS','SQL','React','Node','CSS']
 const validator= require('validator');  // this is a npm module which we can use to validate email and other things
@@ -86,6 +88,28 @@ const userSchema=  new mongoose.Schema ({
 },{ timestamps: true,  // this will add createdAt and updatedAt fields to the schema
     versionKey: false  // this will remove __v field from the schema
 });
+
+// Generating a jwt token for each login user at schema level - schema methods accezsed by each users
+
+userSchema.pre('save', async function (next) {
+    const saltRounds=10;
+    console.log(saltRounds+this.password);
+    const result= await bcrypt.hash(this.password, saltRounds);
+    this.password=result;
+    next();
+})
+userSchema.methods.getJwt= async function () {
+    user= this // current user instance or a document 
+    const token= await jwt.sign({_id:user._id},"Dev@123tinder") // so basicall this will create a encrypted jst token which include user_id in hidden format and with secreat key to encode nad decode it
+    return token
+}
+
+userSchema.methods.verifyPassword= async function(enterd_password)  {
+    storedhash=this.password;
+     const result= await bcrypt.compare(enterd_password , storedhash)
+        return result;
+}
+
 
 
 userSchema.pre('findOneAndUpdate', function (next) {
