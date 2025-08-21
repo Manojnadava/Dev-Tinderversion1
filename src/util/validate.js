@@ -1,7 +1,9 @@
 const validator= require('validator')
 
-const validateRequestBody = (req) => {
+const validateRequestBody = (req,res,next) => {
     const { firstName, lastName, emailId, password } = req.body;  //object destructuring to extract properties from the request body
+
+    console.log(firstName, lastName, emailId, password);
 
     if (!firstName || typeof firstName !== 'string') {
         throw new Error("Invalid or missing 'firstName'");
@@ -20,7 +22,7 @@ const validateRequestBody = (req) => {
         return res.status(400).json({ error: "'password' must be at least 6 characters long" });
     }
 
-    return;
+    return ;
 };
 
 module.exports = validateRequestBody;

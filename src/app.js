@@ -7,8 +7,9 @@ const app= express(); // creating an instance of an express through calling func
 const User= require('./models/user')  // since we directly exported user calss there we can import with any name
 const validateRequestBody=require('./util/validate');
 const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
-
-
+const cookieparser=require('cookie-parser')
+const jwt=require('jsonwebtoken')
+const {userAuth}= require('./middlewears/auth');
 
 User.init()  // ensures indexes are built
   .then(() => console.log('Indexes are ensured'))
@@ -18,10 +19,13 @@ User.init()  // ensures indexes are built
 app.use(express.json()); // which converts json data from post req to js object and attched to req.body
 // crerating a signup api post req handling
 
+app.use(cookieparser()); // which will parse or convert the cookie to object by adding the key value pair and asign to req.cookies
+
+
 
 
 //Login Autrhentication API
-app.post('/login', (req,res)=>{
+app.post('/login', async (req,res)=>{
   const {emailId, password}= req.body;
   console.log(password);
   try{
@@ -30,12 +34,17 @@ app.post('/login', (req,res)=>{
      if(!valid) {
       throw new Error('Invalid Credentials')
      }
-     const user= User.findOne({emailId});
+     const user= await  User.findOne({emailId}).select('+password');
      console.log(user);
-     const matchPasswords= matchPassword(password,user.password);
+     const matchPasswords=  await matchPassword(password,user.password);
      if(!matchPasswords) {
       throw new Error('Invalid Credentials')
      }
+     // Login successful
+     // Create a JWT token
+     const token= await jwt.sign({_id:user._id},"Dev@123tinder") // so basicall this will create a encrypted jst token which include user_id in hidden format and with secreat key to encode nad decode it
+     // add this jwt token to cookie and send the response back to user
+     res.cookie('token',token,{httpOnly:true,maxAge:1000*60*60 , secure: true});
      res.send('Login successfull');
 
 
@@ -43,6 +52,10 @@ app.post('/login', (req,res)=>{
    res.status(401).send('Error with'+ err.message);
   }
 
+})
+
+app.get('/profile', userAuth, async (req,res)=>{
+  res.send(req.user);
 })
 
 app.post('/signup', async (req, res)=>{
@@ -54,12 +67,15 @@ app.post('/signup', async (req, res)=>{
 
     try {
        //User data validation
-        validateRequestBody(req);
+        validateRequestBody(req,res);
+        console.log('Validation done ');
         const { firstName, lastName, emailId, password } = req.body; 
 
 
        //Password Hashing 
-       const hashedpassword= encryptPassword(password);
+       const hashedpassword= await  encryptPassword(password);
+
+       console.log(hashedpassword);
 
        // saving the user 
        const user= new User({
@@ -68,7 +84,7 @@ app.post('/signup', async (req, res)=>{
         emailId,
         password: hashedpassword,  // here we are using the encryptPassword function to hash the password
         skills: req.body.skills || [],  // if skills not provided then it will be an empty array
-        photoUrl: req.body.photoUrl || ''  // if photoUrl not provided then it will be an empty string
+        photoUrl: req.body.photoUrl   // if photoUrl not provided then it will be an empty string
        });   //here this User isa model which uliton frame work or structure of schema user_schema
       await user.save();  // this in hidsight using inserOne function in mongo which returns a promise so we need to use async in handler
 
@@ -82,9 +98,10 @@ app.post('/signup', async (req, res)=>{
 
 
 // get user data individual 
-app.get('/user', async (req,res)=>{
+app.get('/user', userAuth,async (req,res)=>{
     try {
         const useremail = req.body.user_email;
+        console.log
        const user=  await User.findOne({emailId : useremail})  // retrun a single obj
        console.log(user)
        if(user) {
@@ -115,7 +132,7 @@ app.get('/feed', async (req,res)=>{
 
 //to delete a particluare user from db
 
-app.delete('/user',async (req,res)=>{
+app.delete('/user',userAuth,async (req,res)=>{
    const userid = req.body.user_id;
    res.send("User deleted Succesfully");
    
@@ -128,7 +145,7 @@ app.delete('/user',async (req,res)=>{
     
 })
 // Update a user document using PUT
-app.put('/user/:userid', async (req, res) => {
+app.put('/user/:userid',userAuth, async (req, res) => {
   try {
     const userId = req.params.userid; // Extract user ID from URL params
     const updatedData = req.body; // Data to update from the request body
@@ -148,7 +165,7 @@ app.put('/user/:userid', async (req, res) => {
 
 
 // Update a one particular record of a one document in a collection using Patch
- app.patch('/update/:userid', async (req, res)=>{
+ app.patch('/update/:userid',userAuth, async (req, res)=>{
  try{
      const xeff = req.body;
      console.log(xeff)
