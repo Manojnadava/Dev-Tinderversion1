@@ -9,6 +9,9 @@ const validateRequestBody=require('./util/validate');
 //const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
 const cookieparser=require('cookie-parser')
 const {userAuth}= require('./middlewears/auth');
+const authRouter= require('./routes/auth');
+const profile_router=require('./routes/profile');
+const connection_router= require('./routes/connection');
 
 User.init()  // ensures indexes are built
   .then(() => console.log('Indexes are ensured'))
@@ -21,80 +24,20 @@ app.use(express.json()); // which converts json data from post req to js object 
 app.use(cookieparser()); // which will parse or convert the cookie to object by adding the key value pair and asign to req.cookies
 
 
+app.use('/',authRouter);
 
 
-//Login Autrhentication API
-app.post('/login', async (req,res)=>{
-  const {emailId, password}= req.body;
-  console.log(password);
-  try{
-     const valid= validator.isEmail(emailId);
-     console.log(valid);
-     if(!valid) {
-      throw new Error('Invalid Credentials')
-     }
-     const user= await  User.findOne({emailId}).select('+password');
-     console.log(user);
-     const matchPasswords= await user.verifyPassword;
-     if(!matchPasswords) {
-      throw new Error('Invalid Credentials')
-     }
-     // Login successful
-     // Create a JWT token
-     const token=  await user.getJwt();
-     // add this jwt token to cookie and send the response back to user
-     res.cookie('token',token,{httpOnly:true ,maxAge:1000*60*60 , secure: true});
-     res.send('Login successfull');
+app.use('/profile',profile_router);
 
 
-  } catch (err) {
-   res.status(401).send('Error with'+ err.message);
-  }
 
-})
-
-app.get('/profile', userAuth, async (req,res)=>{
-  res.send(req.user);
-})
-
-app.post('/signup', async (req, res)=>{
-  // ajson obj diff to js obj js obj is key value pair but in json both should be string
-    // creating a new istnace of the User model
-  console.log( req.body);  //serverundefined  if no middelwear used
-    const userObj= req.body;   // our server cant directly read data req.body as it is in json format so we neeed middelwear
-    
-
-    try {
-       //User data validation
-        validateRequestBody(req,res);
-        console.log('Validation done ');
-        const { firstName, lastName, emailId, password } = req.body; 
+// app.get('/profile', userAuth, async (req,res)=>{
+//   res.send(req.user);
+// })
 
 
-       //Password Hashing taken care at schema level
-       
 
-       //console.log(hashedpassword);
-
-       // saving the user 
-       const user= new User({
-        firstName,
-        lastName,
-        emailId,
-        password,  // here we are using the encryptPassword function to hash the password
-        skills: req.body.skills || [],  // if skills not provided then it will be an empty array
-        photoUrl: req.body.photoUrl   // if photoUrl not provided then it will be an empty string
-       });   //here this User isa model which uliton frame work or structure of schema user_schema
-      await user.save();  // this in hidsight using inserOne function in mongo which returns a promise so we need to use async in handler
-
-        res.send('User added succesfully')
-    }
-    catch (err) {
-      res.status(400).send('Error happend with'+ err.message)
-    }
-    
-})
-
+app.use('/connection/', connection_router);
 
 // get user data individual 
 app.get('/user', userAuth,async (req,res)=>{

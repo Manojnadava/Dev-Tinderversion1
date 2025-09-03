@@ -17,13 +17,17 @@ const userAuth= async (req,res,next)=>{
    //need to validate this token
    const {_id}= jwt.verify(token_value,"Dev@123tinder")  // fetching the hidden user id from the jwt token
 
-   //onsole.log(decodetoken);
+   //console.log(decodetoken);
    const user= await User.findById(_id);
+  //  if(user._id!= req.params.userid) {
+  //   res.status(401).send('Un authorized user');
+  //  }
    if (!user) {
     throw new Error('User not valid')
    }
    req.user=user;
-    res.send(user);
+   req.update=true;
+    //res.send(user);
     next();
 
  } catch (err) {

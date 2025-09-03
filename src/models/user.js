@@ -91,13 +91,7 @@ const userSchema=  new mongoose.Schema ({
 
 // Generating a jwt token for each login user at schema level - schema methods accezsed by each users
 
-userSchema.pre('save', async function (next) {
-    const saltRounds=10;
-    console.log(saltRounds+this.password);
-    const result= await bcrypt.hash(this.password, saltRounds);
-    this.password=result;
-    next();
-})
+
 userSchema.methods.getJwt= async function () {
     user= this // current user instance or a document 
     const token= await jwt.sign({_id:user._id},"Dev@123tinder") // so basicall this will create a encrypted jst token which include user_id in hidden format and with secreat key to encode nad decode it
@@ -110,7 +104,16 @@ userSchema.methods.verifyPassword= async function(enterd_password)  {
         return result;
 }
 
-
+userSchema.pre('save', async function (next) {
+    const saltRounds=10;
+    if(this.password==undefined){
+        next();
+    }
+    console.log(saltRounds+this.password);
+    const result= await bcrypt.hash(this.password, saltRounds);
+    this.password=result;
+    next();
+})
 
 userSchema.pre('findOneAndUpdate', function (next) {
     const update = this.getUpdate();  // 🧠 access the incoming update
