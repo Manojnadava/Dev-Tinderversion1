@@ -25,7 +25,8 @@ const connection_schema= new mongoose.Schema ({
 connection_schema.index({sender_id:1 , receiver_id:1}, {unique: true})  // creating a compound index where 2 user id s are stored in form of tuple in b tree structure in separtae disk of mongo server for index scan- (A,B) like this stored
 connection_schema.index({receiver_id:1})  // to get intersetd notification based on each user a receiver id is stored in a separate column in a disk
 // receiver_id:1  means the id of receiver are stored in the asscending order smallest to larget in disk of receiver id tree or index record of receiver id
-const connection_model= mongoose.model('Connection',connection_schema)
+
+
 
 connection_schema.pre('save', function (next) {
     // validation before saving to connection req object in db
@@ -41,5 +42,20 @@ connection_schema.pre('save', function (next) {
     }
    
 })
+
+
+
+
+
+
+
+
+
+
+
+
+const connection_model= mongoose.model('Connection',connection_schema)
+
+
 
 module.exports=connection_model;

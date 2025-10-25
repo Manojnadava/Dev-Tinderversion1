@@ -1,13 +1,10 @@
 const User= require('../models/user');
 const jwt=require('jsonwebtoken')
 
-const adminAuth=(req,res,next)=>{
-    const token='xyz';
-    const isadminValid= token==='xyz';
-    (isadminValid) ? next() : res.status(401).send('All data not  sent');
-}
+
 
 const userAuth= async (req,res,next)=>{
+  console.log(req.params);
     const token_value=req.cookies.token;
   console.log(token_value);
  try{
@@ -19,7 +16,8 @@ const userAuth= async (req,res,next)=>{
 
    //console.log(decodetoken);
    const user= await User.findById(_id);
-  //  if(user._id!= req.params.userid) {
+  //  if(user._id.toString()  != 'somethig i need tocompare related to the seding user') {
+  //   console.log(user._id )
   //   res.status(401).send('Un authorized user');
   //  }
    if (!user) {
@@ -36,7 +34,6 @@ const userAuth= async (req,res,next)=>{
 }
 
 module.exports={
-    adminAuth,
     userAuth
 }
 

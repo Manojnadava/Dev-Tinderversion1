@@ -2,16 +2,21 @@ const express= require('express');
 const router=express.Router();  // profile router instance
 const User=require('../models/user')
 const {userAuth}=require('../middlewears/auth');
-const validatefun= require('../util/validate');
+const validatefun= require('../middlewears/validate');
+const {get_followers_count_per_user}= require('../middlewears/get_conn_list');
 
-router.post('/view/:userid',userAuth, async(req,res)=>{
+router.post('/view/:userid',userAuth,get_followers_count_per_user, async(req,res)=>{
 //const user_id= req.params.userid;
+
+// here we will get one users total connection count 
 const user=req.user;
+
 res.json({
     userid: user._id,
     firstName: user.firstName,
     lastName: user.lastName,
-    about: user.about
+    about: user.about,
+    total_connections : req.total_connections[0].connections
 })
 })
 
@@ -52,9 +57,11 @@ catch (err) {
 
 })
 
+
+
 router.patch('/forgot_password', userAuth,validatefun, async(req,res)=>{
     updating_password= req.body;
-    
+
 
 })
 

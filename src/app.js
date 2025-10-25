@@ -5,13 +5,14 @@ const connection=require('./config/database');
 const validator= require('validator')
 const app= express(); // creating an instance of an express through calling function
 const User= require('./models/user')  // since we directly exported user calss there we can import with any name
-const validateRequestBody=require('./util/validate');
+const validateRequestBody=require('./middlewears/validate');
 //const {encryptPassword, matchPassword} = require('./util/encrypt'); // importing the encryptPassword and matchPassword functions from encrypt.js file
 const cookieparser=require('cookie-parser')
 const {userAuth}= require('./middlewears/auth');
 const authRouter= require('./routes/auth');
 const profile_router=require('./routes/profile');
 const connection_router= require('./routes/connection');
+const user_req_router= require('./routes/user');
 
 User.init()  // ensures indexes are built
   .then(() => console.log('Indexes are ensured'))
@@ -38,6 +39,8 @@ app.use('/profile',profile_router);
 
 
 app.use('/connection/', connection_router);
+
+app.use('/user', user_req_router)
 
 // get user data individual 
 app.get('/user', userAuth,async (req,res)=>{

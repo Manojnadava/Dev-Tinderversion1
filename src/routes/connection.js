@@ -2,20 +2,39 @@ const express= require('express');
 const router=express.Router();
 const Connection= require('../models/connection');
 const mongoose= require('mongoose');
-const {connection_validation}= require('../util/connection_validation');
+const {connection_validation}= require('../middlewears/connection_validation');
 
 const {userAuth}=  require('../middlewears/auth');  //User Authentication
 
-
-router.use(userAuth);
-
+let result;  // global level scope
 
 
+//router.use(userAuth);
 
-router.post('/:status/:reciever_id', async(req,res)=>{
-    const receiver_id= req.params.reciever_id;
+//router.use(connection_validation);
+
+
+
+
+router.post('/:status/:user_id',userAuth,connection_validation,  async(req,res, next)=>{
+    const receiver_id= req.params.user_id;
     const sender_id= req.user._id;
-    const status=req.params.status // handle both intersted and ignored request
+    const status=req.status // handle both intersted and ignored request
+    console.log(status+'In conn api')
+    if (!['pending','ignored'].includes(status)) {
+        console.log('Enterd this block')
+      throw new Error ('Invalid Status')
+      
+    }
+    if (req.result && req.result.status=='ignored' & req.params.status=='interested') {
+        req.result.status='pending';
+       result=  await req.result.save();
+        return res.json({
+            message : "Connection sent ",
+            data: result
+        })
+    }
+    //console.log(req.params.status);
 
     try{
         const connection= new Connection ({
@@ -23,61 +42,72 @@ router.post('/:status/:reciever_id', async(req,res)=>{
             receiver_id,
             status: status
         })
-      const result = await  connection.save();
+       result = await  connection.save();   // getting from global scope
+       //console.log(result);
       res.send(result);
     } catch (err) {
         console.log(err.message);
-        res.status(401).send(err.message);
+        next(err);
+       
+       
     }
 })
 
-// router.post('/:status/:reciever_id', async(req,res)=>{
-//     const receiver_id= req.params.reciever_id;
-//     const sender_id= req.user._id
-// try{
-//     const result= await Connection.create({
-//         sender_id,
-//         receiver_id,
-//         status: 'ignored'
-//      })
-//      res.send(result);
-// } catch (err) {
-//     console.log(err.message);
-//     res.status(401).send(err.message);
-// }
- 
-// })
+router.patch('/unfollow/:user_id', userAuth, connection_validation,async (req, res)=>{
+    if (req.result) {
+        await req.result.deleteOne()
+        res.send('Deletion done')
+    }
+    else {
+        throw new Error('No records to delete ')
+    }
+
+})
 
 
-router.patch('/:status/:sender_id',async (req,res)=>{
-    const sender_id= req.params.sender_id;
+router.patch('/:status/:user_id',userAuth, connection_validation,async (req,res, next)=>{
+    const sender_id= req.params.user_id;
     const receiver_id=req.user._id;
     const status=req.params.status // handle both accepted and rejected request
+    console.log('eterdpatch'+status+ req.status);
     const allowed_status=['accepted','rejected'];
     try{
-        if(! allowed_status.includes(status) || req.status=='ignored') {
+        if(! allowed_status.includes(status)) {
             throw new Error ('Not a valid status');
         }
      
-        const result=  (req.status=='pending') ? await Connection.findOneAndUpdate({sender_id : new mongoose.Types.ObjectId(sender_id)},{$set : {status:status}}, {new: true}) : null;
+        const result=  (req.status=='pending') ? await Connection.findOneAndUpdate({sender_id : sender_id, receiver_id: receiver_id , status: 'pending'},{$set : {status:  status}}, {new: true}) : '';
+        console.log(result);
        if (result) {
-        res.send('Status set ')
+         return  res.json({
+            message : result
+         })
+       } else {
+        throw new Error('Not  a Valid Request')
        }
         
 
     } catch (err) {
-         res.json({
-            message : err.message 
-         })
+         next(err);
     }
 })
 
 
-// router.patch('/rejected/:sender_id',async (req,res)=>{
-//     const sender_id= req.params.sender_id;
-//     const receiver_id=req.user._id;
-//     const result=  await Connection.findOneAndUpdate({sender_id : new mongoose.Types.ObjectId(sender_id)},{$set : {status:'rejected'}}, {new: true})
-// })
 
+
+router.use((err,req,res,next)=>{
+
+     if(err.code ==11000) {
+           return   res.status(401).json({
+         message : `Duplicate entry with already a connection status in database `
+            });
+        }
+       // return res.status(500).send(err.message);
+
+    res.json({
+        err_message : err.message
+    })
+
+})
 
 module.exports= router;

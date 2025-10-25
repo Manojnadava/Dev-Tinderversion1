@@ -1,5 +1,5 @@
 const express= require('express');
-const validateRequestBody = require('../util/validate');
+const validateRequestBody = require('../middlewears/validate');
 const User=require('../models/user');
 const validator=require('validator')
 
@@ -61,6 +61,7 @@ authRouter.post('/login',async (req,res)=>{
        // Login successful
        // Create a JWT token
        const token=  await user.getJwt();
+       req.user_id=user._id;
        // add this jwt token to cookie and send the response back to user
        res.cookie('token',token,{httpOnly:true ,maxAge:1000*60*60 , secure: true});
        res.send('Login successfull');

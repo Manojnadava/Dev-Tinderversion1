@@ -23,17 +23,24 @@ const validateRequestBody = (req,res,next) => {
         return res.status(400).json({ error: "'password' must be at least 6 characters long" });
     }
 
-
+    return  next();
   }
     console.log(req.body.age + req.body.about+ req.body.photoUrl+req.body.skills)
-    if( (req.body.age != undefined ) & (age>=50 || age <=18 || ! validator.isNumeric(age))) {
+    if( (req.body.age != undefined ) ) {
+       (age>=50 || age <=18 || ! validator.isNumeric(age))
+        {
         return res.status(400).json({ error: "Not a Valida age" });
     }
 
-    if( (req.body.about != undefined) & typeof about !='string' || about.length <10 ) {
+    } 
+    if (req.body.about != undefined)   {
+        (typeof about !='string' || (about.length <10)  )   
+        {
         return res.status(400).json({ error: "Increase About Length" });
     }
 
+
+    } 
     if( (req.body.photoUrl != undefined) ){
         if (validator.isURL(photoUrl)) {
             return res.status(400).json({ error: `${photoUrl} is not Valid` });
@@ -45,7 +52,7 @@ const validateRequestBody = (req,res,next) => {
         }
      
     }
-    if (req.body.password != undefined) {
+    if (  req.body.password != undefined  & req.update_password) {
         if (!password || typeof password !== 'string' || password.length < 6 || ! validator.isStrongPassword(password, { minLength: 6 })) {
             return res.status(400).json({ error: "'password' must be at least 6 characters long" });
         }

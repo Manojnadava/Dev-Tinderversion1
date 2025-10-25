@@ -89,6 +89,9 @@ const userSchema=  new mongoose.Schema ({
     versionKey: false  // this will remove __v field from the schema
 });
 
+userSchema.index({createdAt : 1})  
+
+
 // Generating a jwt token for each login user at schema level - schema methods accezsed by each users
 
 
