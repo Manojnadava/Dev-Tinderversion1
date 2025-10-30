@@ -59,9 +59,7 @@ router.get('/request', get_follow_request_details, async (req,res)=>{
         res.json({
             data : users,
             total_data : total_user,
-            currentpage : req.query.page,
-            prev_page : req.query.page-1,
-            has_next_page : (parseInt(total_user) > parseInt(req.query.page)*parseInt(req.query.limit) ? 'yes' : 'no')
+            next_cursor : users[users.length-1].createdAt
         })
     } catch(err) {
         res.status(401).send(err.message);
